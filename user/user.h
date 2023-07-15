@@ -1,5 +1,7 @@
 struct stat;
 struct rtcdate;
+#include"../kernel/types.h"
+
 
 // system calls
 int fork(void);
