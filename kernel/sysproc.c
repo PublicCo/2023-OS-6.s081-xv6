@@ -6,17 +6,29 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
 {
   int n;
-  if(argint(0, &n) < 0)
+  if (argint(0, &n) < 0)
     return -1;
   exit(n);
-  return 0;  // not reached
+  return 0; // not reached
 }
 
+uint64 sys_trace(void)
+{
+  int n;
+  if (argint(0, &n) < 0)
+  {
+    return -1;
+  }
+  // set mask
+  myproc()->mask = n;
+  return 0;
+}
 uint64
 sys_getpid(void)
 {
@@ -33,7 +45,7 @@ uint64
 sys_wait(void)
 {
   uint64 p;
-  if(argaddr(0, &p) < 0)
+  if (argaddr(0, &p) < 0)
     return -1;
   return wait(p);
 }
@@ -44,26 +56,43 @@ sys_sbrk(void)
   int addr;
   int n;
 
-  if(argint(0, &n) < 0)
+  if (argint(0, &n) < 0)
     return -1;
   addr = myproc()->sz;
-  if(growproc(n) < 0)
+  if (growproc(n) < 0)
     return -1;
   return addr;
 }
 
+uint64 sys_sysinfo(void)
+{
+  uint64 adr;
+  struct sysinfo si;
+  si.freemem = freemem();
+  si.nproc = procnum();
+  if (argaddr(0, &adr) < 0)
+  {
+    printf("error adr\n");
+    return -1;
+  }
+  if (copyout(myproc()->pagetable, adr, (char *)&si, sizeof(si)) < 0)
+    return -1;
+  return 0;
+}
 uint64
 sys_sleep(void)
 {
   int n;
   uint ticks0;
 
-  if(argint(0, &n) < 0)
+  if (argint(0, &n) < 0)
     return -1;
   acquire(&tickslock);
   ticks0 = ticks;
-  while(ticks - ticks0 < n){
-    if(myproc()->killed){
+  while (ticks - ticks0 < n)
+  {
+    if (myproc()->killed)
+    {
       release(&tickslock);
       return -1;
     }
@@ -78,7 +107,7 @@ sys_kill(void)
 {
   int pid;
 
-  if(argint(0, &pid) < 0)
+  if (argint(0, &pid) < 0)
     return -1;
   return kill(pid);
 }

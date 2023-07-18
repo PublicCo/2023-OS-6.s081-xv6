@@ -68,6 +68,39 @@ OBJS += \
 endif
 
 
+OBJS_KCSAN = \
+  $K/start.o \
+  $K/console.o \
+  $K/printf.o \
+  $K/uart.o \
+  $K/spinlock.o
+
+ifdef KCSAN
+OBJS_KCSAN += \
+	$K/kcsan.o
+endif
+
+ifeq ($(LAB),pgtbl)
+OBJS += \
+	$K/vmcopyin.o
+endif
+
+ifeq ($(LAB),$(filter $(LAB), pgtbl lock))
+OBJS += \
+	$K/stats.o\
+	$K/sprintf.o
+endif
+
+
+ifeq ($(LAB),net)
+OBJS += \
+	$K/e1000.o \
+	$K/net.o \
+	$K/sysnet.o \
+	$K/pci.o
+endif
+
+
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
 #TOOLPREFIX = 
@@ -196,20 +229,14 @@ UPROGS=\
 	$U/_grind\
 	$U/_wc\
 	$U/_zombie\
-	$U/_sleep\
+  $U/_sleep\
 	$U/_pingpong\
 	$U/_primes\
 	$U/_find\
 	$U/_xargs
+  $U/_trace\
+	$U/_sysinfotest
 
-
-
-
-
-ifeq ($(LAB),$(filter $(LAB), pgtbl lock))
-UPROGS += \
-	$U/_stats
-endif
 
 ifeq ($(LAB),traps)
 UPROGS += \
