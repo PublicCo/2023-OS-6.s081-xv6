@@ -1,0 +1,216 @@
+PIPE(2)        Linux Programmer's Manual       PIPE(2)
+
+NNAAMMEE
+       pipe, pipe2 - create pipe
+
+SSYYNNOOPPSSIISS
+       ##iinncclluuddee <<uunniissttdd..hh>>
+
+       /* On Alpha, IA-64, MIPS, SuperH, and SPARC/SPARC64; see NOTES */
+       ssttrruucctt ffdd__ppaaiirr {{
+           lloonngg ffdd[[22]];;
+       }};;
+       ssttrruucctt ffdd__ppaaiirr ppiippee(());;
+
+       /* On all other architectures */
+       iinntt ppiippee((iinntt _p_i_p_e_f_d[[22]]));;
+
+       ##ddeeffiinnee __GGNNUU__SSOOUURRCCEE             /* See feature_test_macros(7) */
+       ##iinncclluuddee <<ffccnnttll..hh>>              /* Obtain O_* constant definitions */
+       ##iinncclluuddee <<uunniissttdd..hh>>
+
+       iinntt ppiippee22((iinntt _p_i_p_e_f_d[[22]],, iinntt _f_l_a_g_s));;
+
+DDEESSCCRRIIPPTTIIOONN
+       ppiippee()  creates  a  pipe, a unidirectional data
+       channel that can be used for interprocess  com‐
+       munication.  The array _p_i_p_e_f_d is used to return
+       two file descriptors referring to the  ends  of
+       the  pipe.  _p_i_p_e_f_d_[_0_] refers to the read end of
+       the pipe.  _p_i_p_e_f_d_[_1_] refers to the write end of
+       the pipe.  Data written to the write end of the
+       pipe is buffered by the kernel until it is read
+       from the read end of the pipe.  For further de‐
+       tails, see ppiippee(7).
+
+       If _f_l_a_g_s is 0, then  ppiippee22()  is  the  same  as
+       ppiippee().   The  following  values can be bitwise
+       ORed in _f_l_a_g_s to obtain different behavior:
+
+       OO__CCLLOOEEXXEECC
+              Set the close-on-exec (FFDD__CCLLOOEEXXEECC)  flag
+              on  the  two  new file descriptors.  See
+              the description  of  the  same  flag  in
+              ooppeenn(2) for reasons why this may be use‐
+              ful.
+
+       OO__DDIIRREECCTT (since Linux 3.4)
+              Create  a  pipe  that  performs  I/O  in
+              "packet"  mode.   Each  wwrriittee(2)  to the
+              pipe is dealt with as a separate packet,
+              and rreeaadd(2)s from the pipe will read one
+              packet at a time.   Note  the  following
+              points:
+
+              *  Writes of greater than PPIIPPEE__BBUUFF bytes
+                 (see ppiippee(7)) will be split into mul‐
+                 tiple packets.  The constant PPIIPPEE__BBUUFF
+                 is defined in _<_l_i_m_i_t_s_._h_>.
+
+              *  If a rreeaadd(2) specifies a buffer  size
+                 that is smaller than the next packet,
+                 then the requested  number  of  bytes
+                 are read, and the excess bytes in the
+                 packet are discarded.   Specifying  a
+                 buffer  size of PPIIPPEE__BBUUFF will be suf‐
+                 ficient to read the largest  possible
+                 packets (see the previous point).
+
+              *  Zero-length   packets  are  not  sup‐
+                 ported.  (A rreeaadd(2) that specifies  a
+                 buffer  size  of zero is a no-op, and
+                 returns 0.)
+
+              Older kernels that do not  support  this
+              flag  will  indicate  this via an EEIINNVVAALL
+              error.
+
+              Since  Linux  4.5,  it  is  possible  to
+              change  the  OO__DDIIRREECCTT  setting of a pipe
+              file descriptor using ffccnnttll(2).
+
+       OO__NNOONNBBLLOOCCKK
+              Set the OO__NNOONNBBLLOOCCKK file status  flag  on
+              the  open  file descriptions referred to
+              by the new file descriptors.  Using this
+              flag  saves  extra  calls to ffccnnttll(2) to
+              achieve the same result.
+
+RREETTUURRNN VVAALLUUEE
+       On success, zero is returned.  On error, -1  is
+       returned,   _e_r_r_n_o  is  set  appropriately,  and
+       _p_i_p_e_f_d is left unchanged.
+
+       On Linux (and other systems), ppiippee()  does  not
+       modify  _p_i_p_e_f_d on failure.  A requirement stan‐
+       dardizing   this   behavior   was   added    in
+       POSIX.1-2008  TC2.   The Linux-specific ppiippee22()
+       system call likewise does not modify _p_i_p_e_f_d  on
+       failure.
+
+EERRRROORRSS
+       EEFFAAUULLTT _p_i_p_e_f_d is not valid.
+
+       EEIINNVVAALL (ppiippee22()) Invalid value in _f_l_a_g_s.
+
+       EEMMFFIILLEE The  per-process  limit on the number of
+              open file descriptors has been reached.
+
+       EENNFFIILLEE The system-wide limit on the total  num‐
+              ber of open files has been reached.
+
+       EENNFFIILLEE The  user  hard limit on memory that can
+              be allocated for pipes has been  reached
+              and  the  caller  is not privileged; see
+              ppiippee(7).
+
+VVEERRSSIIOONNSS
+       ppiippee22() was added to Linux in  version  2.6.27;
+       glibc  support  is available starting with ver‐
+       sion 2.9.
+
+CCOONNFFOORRMMIINNGG TTOO
+       ppiippee(): POSIX.1-2001, POSIX.1-2008.
+
+       ppiippee22() is Linux-specific.
+
+NNOOTTEESS
+       The System V ABI on some  architectures  allows
+       the use of more than one register for returning
+       multiple values; several architectures (namely,
+       Alpha,  IA-64, MIPS, SuperH, and SPARC/SPARC64)
+       (ab)use this feature in order to implement  the
+       ppiippee()  system call in a functional manner: the
+       call doesn't take any arguments and  returns  a
+       pair of file descriptors as the return value on
+       success.  The  glibc  ppiippee()  wrapper  function
+       transparently  deals with this.  See ssyyssccaallll(2)
+       for information regarding  registers  used  for
+       storing second file descriptor.
+
+EEXXAAMMPPLLEESS
+       The  following program creates a pipe, and then
+       ffoorrkk(2)s to create a child process;  the  child
+       inherits  a  duplicate  set of file descriptors
+       that  refer  to  the  same  pipe.   After   the
+       ffoorrkk(2),  each process closes the file descrip‐
+       tors that it doesn't need  for  the  pipe  (see
+       ppiippee(7)).   The  parent  then writes the string
+       contained in the program's  command-line  argu‐
+       ment  to  the  pipe,  and  the child reads this
+       string a byte at  a  time  from  the  pipe  and
+       echoes it on standard output.
+
+   PPrrooggrraamm ssoouurrccee
+       #include <sys/types.h>
+       #include <sys/wait.h>
+       #include <stdio.h>
+       #include <stdlib.h>
+       #include <unistd.h>
+       #include <string.h>
+
+       int
+       main(int argc, char *argv[])
+       {
+           int pipefd[2];
+           pid_t cpid;
+           char buf;
+
+           if (argc != 2) {
+               fprintf(stderr, "Usage: %s <string>\n", argv[0]);
+               exit(EXIT_FAILURE);
+           }
+
+           if (pipe(pipefd) == -1) {
+               perror("pipe");
+               exit(EXIT_FAILURE);
+           }
+
+           cpid = fork();
+           if (cpid == -1) {
+               perror("fork");
+               exit(EXIT_FAILURE);
+           }
+
+           if (cpid == 0) {    /* Child reads from pipe */
+               close(pipefd[1]);          /* Close unused write end */
+
+               while (read(pipefd[0], &buf, 1) > 0)
+                   write(STDOUT_FILENO, &buf, 1);
+
+               write(STDOUT_FILENO, "\n", 1);
+               close(pipefd[0]);
+               _exit(EXIT_SUCCESS);
+
+           } else {            /* Parent writes argv[1] to pipe */
+               close(pipefd[0]);          /* Close unused read end */
+               write(pipefd[1], argv[1], strlen(argv[1]));
+               close(pipefd[1]);          /* Reader will see EOF */
+               wait(NULL);                /* Wait for child */
+               exit(EXIT_SUCCESS);
+           }
+       }
+
+SSEEEE AALLSSOO
+       ffoorrkk(2),   rreeaadd(2),  ssoocckkeettppaaiirr(2),  sspplliiccee(2),
+       tteeee(2),   vvmmsspplliiccee(2),   wwrriittee(2),    ppooppeenn(3),
+       ppiippee(7)
+
+CCOOLLOOPPHHOONN
+       This  page is part of release 5.10 of the Linux
+       _m_a_n_-_p_a_g_e_s  project.   A  description   of   the
+       project,  information about reporting bugs, and
+       the latest version of this page, can  be  found
+       at https://www.kernel.org/doc/man-pages/.
+
+Linux                 2020-06-09               PIPE(2)

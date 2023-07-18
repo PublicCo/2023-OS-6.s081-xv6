@@ -1,5 +1,6 @@
 struct stat;
 struct rtcdate;
+#include"../kernel/types.h"
 struct sysinfo;
 
 // system calls
