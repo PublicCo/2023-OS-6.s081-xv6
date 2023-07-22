@@ -436,7 +436,7 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 const int MAXDEPTH = 2;
 void vmprint(pagetable_t pagetable,uint depth){
   if(depth==0){
-    printf("page table %d\n",pagetable);
+    printf("page table %p\n", pagetable);
   }
 
   //a page contain 9 bits
