@@ -77,8 +77,22 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
+  if(which_dev == 2){
+    //如果有函数调用了alarm
+    if(p->interval>0){
+      if(p->ticks==p->interval){
+         //保存当前现场
+        *(p->laststatus)=*(p->trapframe);
+
+        //将函数地址赋给epc，这样中断结束后直接跳转到alarm指定的function
+        //由于函数地址用的是用户空间的页表，这里只赋值不执行
+        p->trapframe->epc=p->handle;
+      }
+      p->ticks++;
+    }
     yield();
+  }
+
 
   usertrapret();
 }

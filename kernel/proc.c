@@ -54,6 +54,7 @@ procinit(void)
       initlock(&p->lock, "proc");
       p->kstack = KSTACK((int) (p - proc));
   }
+
 }
 
 // Must be called with interrupts disabled,
@@ -141,6 +142,19 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  //设置sigalarm
+  p->handle=0;
+  p->ticks=0;
+  p->interval=0;
+
+  //保存现场用,初始化
+  if((p->laststatus=(struct trapframe*)kalloc())==0){
+    release(&p->lock);
+    return 0;
+  }
+
+
+
   return p;
 }
 
@@ -164,6 +178,13 @@ freeproc(struct proc *p)
   p->killed = 0;
   p->xstate = 0;
   p->state = UNUSED;
+  p->interval=0;
+  p->handle=0;
+  p->ticks=0;
+  //释放
+  if(p->laststatus){
+    kfree((void*)p->laststatus);
+  }
 }
 
 // Create a user page table for a given process,

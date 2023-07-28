@@ -121,6 +121,7 @@ panic(char *s)
   printf("panic: ");
   printf(s);
   printf("\n");
+  backtrace();
   panicked = 1; // freeze uart output from other CPUs
   for(;;)
     ;
@@ -131,4 +132,20 @@ printfinit(void)
 {
   initlock(&pr.lock, "pr");
   pr.locking = 1;
+}
+
+void backtrace(){
+  //获取上一个栈帧
+  //在riscv中，fp是当前栈帧，fp-8是返回值所在的地址，fp-16是上一帧的地址
+  //gcc中，fp被存储在s0寄存器中
+  uint64 fp=r_fp();
+
+  //获取当前页的页首,一个栈由于最大只能一页，所以指针不能超过该页
+  uint64 top=PGROUNDUP(fp);
+
+  //递归搜索直到栈顶
+  for(;fp<top;fp=*((uint64*)(fp-16))){
+    printf("%p\n",*((uint64*)(fp-8)));
+    
+  }
 }
