@@ -184,3 +184,11 @@ void            virtio_disk_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+
+
+//myfunc
+int check_COW(pagetable_t pgtbl, uint64 va);
+void add_ref(uint64 pa);
+int get_refcount(uint64 pa);
+void *cow_alloc(pagetable_t pgtbl, uint64 va);
