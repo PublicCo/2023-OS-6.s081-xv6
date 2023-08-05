@@ -14,28 +14,35 @@ void freerange(void *pa_start, void *pa_end);
 extern char end[]; // first address after kernel.
                    // defined by kernel.ld.
 
-struct run {
+struct run
+{
   struct run *next;
 };
 
-struct {
+// 为每个CPU设置freelist
+struct
+{
   struct spinlock lock;
   struct run *freelist;
-} kmem;
+} kmem[NCPU];
 
-void
-kinit()
+void kinit()
 {
-  initlock(&kmem.lock, "kmem");
-  freerange(end, (void*)PHYSTOP);
+  //初始化锁
+  for (int i = 0; i < NCPU; i++)
+  {
+
+    initlock(&kmem[i].lock, "kmem");
+  }
+
+  freerange(end, (void *)PHYSTOP);
 }
 
-void
-freerange(void *pa_start, void *pa_end)
+void freerange(void *pa_start, void *pa_end)
 {
   char *p;
-  p = (char*)PGROUNDUP((uint64)pa_start);
-  for(; p + PGSIZE <= (char*)pa_end; p += PGSIZE)
+  p = (char *)PGROUNDUP((uint64)pa_start);
+  for (; p + PGSIZE <= (char *)pa_end; p += PGSIZE)
     kfree(p);
 }
 
@@ -43,23 +50,27 @@ freerange(void *pa_start, void *pa_end)
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
-void
-kfree(void *pa)
+void kfree(void *pa)
 {
   struct run *r;
 
-  if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
+  if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end || (uint64)pa >= PHYSTOP)
     panic("kfree");
 
   // Fill with junk to catch dangling refs.
   memset(pa, 1, PGSIZE);
 
-  r = (struct run*)pa;
+  r = (struct run *)pa;
 
-  acquire(&kmem.lock);
-  r->next = kmem.freelist;
-  kmem.freelist = r;
-  release(&kmem.lock);
+  //关闭中断以获取正确的CPUid
+  push_off();
+  int id = cpuid();
+  pop_off();
+
+  acquire(&kmem[id].lock);
+  r->next = kmem[id].freelist;
+  kmem[id].freelist = r;
+  release(&kmem[id].lock);
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -69,14 +80,39 @@ void *
 kalloc(void)
 {
   struct run *r;
+  //关闭中断以获取正确的CPUid
+  push_off();
+  int id = cpuid();
+  pop_off();
 
-  acquire(&kmem.lock);
-  r = kmem.freelist;
-  if(r)
-    kmem.freelist = r->next;
-  release(&kmem.lock);
+  acquire(&kmem[id].lock);
+  r = kmem[id].freelist;
+  if (r)
+    kmem[id].freelist = r->next;
+  else{
+    //去其他cpu上偷一块freelist
+    for(int i=0;i<NCPU;i++){
+      //跳过自己
+      if(id==i)
+        continue;
+      //上锁访问
+      acquire(&kmem[i].lock);
+      r=kmem[i].freelist;
+      //偷
+      if(r){
+        kmem[i].freelist=kmem[i].freelist->next;
+      }
+      release(&kmem[i].lock);
+      //偷到了
+      if(r){
+        break;
+      }
+      //在释放的时候，这块地址就会被插入到当前CPU的freelist中
+    }
+  }
+  release(&kmem[id].lock);
 
-  if(r)
-    memset((char*)r, 5, PGSIZE); // fill with junk
-  return (void*)r;
+  if (r)
+    memset((char *)r, 5, PGSIZE); // fill with junk
+  return (void *)r;
 }
