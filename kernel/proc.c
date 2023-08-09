@@ -169,11 +169,12 @@ freeproc(struct proc *p)
 {
   if (p->trapframe)
     kfree((void *)p->trapframe);
+  if (p->usyscall)
+    kfree((void *)p->usyscall);
   p->trapframe = 0;
   if (p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
-  if (p->usyscall)
-    kfree((void *)p->usyscall);
+
   p->usyscall = 0;
   p->pagetable = 0;
   p->sz = 0;
