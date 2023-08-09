@@ -97,13 +97,13 @@ sys_pgaccess(void)
   // get the physics address
   pagetable_t pagetable = myproc()->pagetable;
   pte_t* first_physic_addr = walk(pagetable,st_addr,0);
-  printf("\n\n");
-  vmprint(pagetable,2);
-  printf("\n");
-  printf("%p and %p\n\n",muskaddr,&muskaddr);
+ // printf("\n\n");
+ // vmprint(pagetable,2);
+ // printf("\n");
+ // printf("%p and %p\n\n",muskaddr,&muskaddr);
   //read over all the pagetable that need to check
   uint result=0;
-  //only check 64 bits of pages
+  //only check 32 bits of pages
   if(len>32){
     return -1;
   }
@@ -111,11 +111,11 @@ sys_pgaccess(void)
   for(int i=0;i<len;i++){
     if((first_physic_addr[i]&PTE_A)&&(first_physic_addr[i]&PTE_V)){
       result|=1<<i;
-      //reset pte_A to avoid loop checking
+      //reset pte_A to avoid always checking
       first_physic_addr[i]^=PTE_A;
     }
   }
-  printf("result = %ud\n",result);
+ // printf("result = %ud\n",result);
   //copy data from kernel to user
   if(copyout(pagetable,muskaddr,(char*)&result,sizeof(uint))<0){
     return -1;

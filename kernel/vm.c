@@ -447,10 +447,10 @@ void vmprint(pagetable_t pagetable,uint depth){
       for(int i=0;i<depth;i++){
         printf("..");
       }
-      uint64 child = PTE2PA(pte);
-      printf("..%d: pte %p pa %p\n", i, pte, child);
+      uint64 nextpteaddr = PTE2PA(pte);
+      printf("..%d: pte %p pa %p\n", i, pte, nextpteaddr);
       if(depth<MAXDEPTH){
-        vmprint((pagetable_t)child,depth+1);
+        vmprint((pagetable_t)nextpteaddr,depth+1);
       }
     }
   }
